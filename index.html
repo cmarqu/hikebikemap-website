@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<title>OpenStreetMap Hike & Bike Map</title>
+	
+	<meta name="description" content="A hiking and biking map using OpenStreetMap data. OpenStreetMap is the free wiki world map that everybody can edit.">
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />	
+
+	<link rel="icon" type="image/png" href="http://toolserver.org/~cmarqu/hikebike16x16.png" />
+
+	<!--<link rel="stylesheet" href="index.css" /> -->
+<!-- Leaflet CSS --> 
+<link rel="stylesheet" href="dist/leaflet.css" />
+<!--[if lte IE 9]><link rel="stylesheet" href="dist/leaflet.ie.css" /><![endif]-->
+
+<!-- Leaflet JavaScript -->
+<script src="dist/leaflet.js"></script>
+<script src="permalink.js"></script>
+<script src="cookies.js"></script>
+
+	<style>
+		body {
+			padding: 0;
+			margin: 0;
+                }
+		html, body, #map {
+			height: 100%;
+		}
+#descriptionToggle {
+        font: 12px/1.4 "Helvetica Neue", Arial, Helvetica, sans-serif;
+	position: absolute;
+	z-index: 10000;
+	left: 80px;
+	height: 14px;
+	border-left: 1px solid #000040;
+	border-bottom: 1px solid #000040;
+	border-right: 1px solid #000040;
+	padding: 2px 10px;
+	margin-right: 200px;
+	background-color: #EEE;
+	cursor: default;
+	opacity: 0.7;
+} 
+#descriptionToggle:hover {
+	background-color: #FFF;
+	opacity: 1;
+}
+#description {
+        font: 12px/1.4 "Helvetica Neue", Arial, Helvetica, sans-serif;
+	position: absolute;
+	z-index: 10000;
+	left: 80px;
+	top: 18px;
+	border: 1px solid #000040;
+	padding: 10px 10px;
+	margin-right: 200px;
+	background-color: #FFF;
+}
+.hide { display: none; }
+ 	</style>	
+	<script>
+	    var showPopupOnHover = false;
+	    text = new Array("Info","Info");
+	    /*
+	    * Schaltet die Beschreibung der Karte an- und aus.
+	    * Toggles the description of the map.
+	    */
+	    function toggleInfo() {
+	       var state = document.getElementById('description').className;
+	       if (state == 'hide') {
+	          // Info anzeigen
+	          document.getElementById('description').className = '';
+	          document.getElementById('descriptionToggle').innerHTML = text[1];
+	       }
+	       else {
+	          // Info verstecken
+   	          document.getElementById('description').className = 'hide';
+	          document.getElementById('descriptionToggle').innerHTML = text[0];
+	       }	
+	    }
+
+function init() {
+   var map = new L.Map('map');
+   	
+   var hikebikemapUrl = 'http://toolserver.org/tiles/hikebike/{z}/{x}/{y}.png';
+   var hikebikemapAttribution = 'Map Data: <a href="http://www.openstreetmap.org/">OpenStreetMap</a> (<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-by-SA 2.0</a>)';
+   var hikebikemap = new L.TileLayer(hikebikemapUrl, {maxZoom: 17, attribution: hikebikemapAttribution});
+   map.addLayer(hikebikemap);
+   		
+   var mapnikUrl = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+   var mapnikAttribution = 'Map Data: <a href="http://www.openstreetmap.org/">OpenStreetMap</a> (<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-by-SA 2.0</a>)';
+   var mapnik = new L.TileLayer(mapnikUrl, {maxZoom: 17, attribution: mapnikAttribution});
+   //map.addLayer(mapnik);
+   		
+   var hillUrl = 'http://toolserver.org/~cmarqu/hill/{z}/{x}/{y}.png';
+   var hillAttribution = 'Hillshading: SRTM3 v2 (<a href="http://www2.jpl.nasa.gov/srtm/">NASA</a>)';
+   var hill = new L.TileLayer(hillUrl, {maxZoom: 17, attribution: hillAttribution});
+   map.addLayer(hill);
+   
+   var hill2 = new L.TileLayer(hillUrl, {maxZoom: 17, attribution: hillAttribution});
+   //    map.addLayer(hill2);
+   
+   var lightingUrl = 'http://toolserver.org/tiles/lighting/{z}/{x}/{y}.png';
+   var lightingAttribution = 'Lighting: <a href="http://www.openstreetmap.org/">OSM</a>';
+   var lighting = new L.TileLayer(lightingUrl, {maxZoom: 17, attribution: lightingAttribution, opacity: 0.72});
+   //map.addLayer(lighting);
+   
+   var lonviahikingUrl = 'http://tile.lonvia.de/hiking/{z}/{x}/{y}.png';
+   var lonviahikingAttribution = 'Hiking Routes: (<a href="http://hiking.lonvia.de">Lonvias Hiking Map</a>)';
+   var lonviahiking = new L.TileLayer(lonviahikingUrl, {maxZoom: 17, attribution: lonviahikingAttribution});
+   //map.addLayer(lonviahiking);
+   
+   var lonviacyclingUrl = 'http://tile.lonvia.de/cycling/{z}/{x}/{y}.png';
+   var lonviacyclingAttribution = 'Cycling Routes: (<a href="http://cycling.lonvia.de">Lonvias Cycling Map</a>)';
+   var lonviacycling = new L.TileLayer(lonviacyclingUrl, {maxZoom: 17, attribution: lonviacyclingAttribution});
+   //map.addLayer(lonviacycling);
+   
+   var mtbscaleUrl = 'http://toolserver.org/tiles/mtb-overlay/{z}/{x}/{y}.png';
+   var mtbscaleAttribution = 'MTB Scale: (<a href="http://open-map.org/mtb/">OSM MTB Overlay</a>)';
+   var mtbscale = new L.TileLayer(mtbscaleUrl, {maxZoom: 17, attribution: mtbscaleAttribution});
+   //map.addLayer(mtbscale);
+   
+   var permalinkControl = new L.Control.Permalink();
+   var seen = false;
+   var center = new L.LatLng(50.0, 14.0); // geographical point (longitude and latitude)
+
+   var layersControl = new L.Control.Layers({
+   	'Base Map': hikebikemap,
+   	'Mapnik': mapnik
+   }, {
+   	'Hillshading': hill,
+   	'Hillshading (exaggerate)': hill2,
+   	'By Night (lit=yes/no)': lighting,
+           "Lonvia's Hiking Routes": lonviahiking,
+           "Lonvia's Cycling Routes": lonviacycling,
+           "Mountainbike Scale (mtb:scale)": mtbscale
+   });
+   
+   map.addControl(layersControl);
+
+   if (permalinkControl._centered)
+   {
+      seen = true;
+   }
+   else
+   {
+      map.setView(center, 5).addLayer(hikebikemap);
+      map.on('locationfound', onLocationFound);
+      //map.on('locationerror', onLocationError);
+      map.locateAndSetView(16);
+   }
+   map.addControl(permalinkControl);
+   
+   function onLocationFound(e) {
+      var radius = e.accuracy / 2;
+      var circleOptions = {
+         weight: 1,
+         color: '#00f',
+         opacity: 0.66,
+         fillOpacity: 0.05
+      };
+      var circle = new L.Circle(e.latlng, radius, circleOptions);
+      
+      map.addLayer(circle);
+   }
+   
+   function onLocationError(e) {
+      alert(e.message);
+   }
+
+}
+</script>
+
+</head>
+<body onLoad='init()'>
+        <div class="noprint" id="descriptionToggle" onclick="toggleInfo()">Info</div>
+	<div class="hide" id="description">A map for hiking and biking. Render style by Colin Marquardt. (<a href="http://wiki.openstreetmap.org/wiki/User:Colin_Marquardt/Hike_%26_Bike_Map">Description</a>)<br/>
+
+	  <img title="Legend" src="legend.png" id="legend" alt="The map's legend a.k.a. map key" border="">
+
+</div>
+        <!-- define a DIV into which the map will appear. -->
+        <div style="position:absolute; top:0; left:0%; width:100%; height:100%" id="map"></div>
+
+</body>
+</html>
