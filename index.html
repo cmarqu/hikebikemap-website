@@ -8,7 +8,6 @@
 
 	<link rel="icon" type="image/png" href="http://toolserver.org/~cmarqu/hikebike16x16.png" />
 
-	<!--<link rel="stylesheet" href="index.css" /> -->
 <!-- Leaflet CSS --> 
 <link rel="stylesheet" href="dist/leaflet.css" />
 <!--[if lte IE 9]><link rel="stylesheet" href="dist/leaflet.ie.css" /><![endif]-->
@@ -26,12 +25,27 @@
 		html, body, #map {
 			height: 100%;
 		}
+#whereami {
+	position: absolute;
+	z-index: 10000;
+	left: 50px;
+	height: 16px;
+	width: 16px;
+	border-left: 1px solid #000040;
+	border-bottom: 1px solid #000040;
+	border-right: 1px solid #000040;
+	padding: 2px 2px;
+	margin-right: 200px;
+	background-color: #EEE;
+	cursor: default;
+	opacity: 0.7;
+} 
 #descriptionToggle {
         font: 12px/1.4 "Helvetica Neue", Arial, Helvetica, sans-serif;
 	position: absolute;
 	z-index: 10000;
 	left: 80px;
-	height: 14px;
+	height: 16px;
 	border-left: 1px solid #000040;
 	border-bottom: 1px solid #000040;
 	border-right: 1px solid #000040;
@@ -41,7 +55,7 @@
 	cursor: default;
 	opacity: 0.7;
 } 
-#descriptionToggle:hover {
+#descriptionToggle:hover, #whereami:hover {
 	background-color: #FFF;
 	opacity: 1;
 }
@@ -121,7 +135,6 @@ function init() {
    //map.addLayer(mtbscale);
    
    var permalinkControl = new L.Control.Permalink();
-   var seen = false;
    var center = new L.LatLng(50.0, 14.0); // geographical point (longitude and latitude)
 
    var layersControl = new L.Control.Layers({
@@ -138,19 +151,13 @@ function init() {
    
    map.addControl(layersControl);
 
-   if (permalinkControl._centered)
-   {
-      seen = true;
-   }
-   else
+   if (!permalinkControl._centered)
    {
       map.setView(center, 5).addLayer(hikebikemap);
-      map.on('locationfound', onLocationFound);
-      //map.on('locationerror', onLocationError);
-      map.locateAndSetView(16);
    }
    map.addControl(permalinkControl);
    
+   var circle_drawn = false;
    function onLocationFound(e) {
       var radius = e.accuracy / 2;
       var circleOptions = {
@@ -159,26 +166,32 @@ function init() {
          opacity: 0.66,
          fillOpacity: 0.05
       };
-      var circle = new L.Circle(e.latlng, radius, circleOptions);
-      
-      map.addLayer(circle);
+      if (!circle_drawn) {
+         var circle = new L.Circle(e.latlng, radius, circleOptions);
+         circle_drawn = true;
+         map.addLayer(circle);
+      }
    }
    
    function onLocationError(e) {
       alert(e.message);
    }
 
+   whereami = function() {
+      map.locateAndSetView(16);
+      map.on('locationfound', onLocationFound);
+   };
 }
 </script>
 
 </head>
 <body onLoad='init()'>
-        <div class="noprint" id="descriptionToggle" onclick="toggleInfo()">Info</div>
+        <div id="whereami" onClick="whereami(); return false;"><img class="noprint" src="icon_geolocation.png" title="Where am I?" alt="Try to geolocate the user." /></div>
+        <div class="noprint" id="descriptionToggle" onClick="toggleInfo()">Info</div>
 	<div class="hide" id="description">A map for hiking and biking. Render style by Colin Marquardt. (<a href="http://wiki.openstreetmap.org/wiki/User:Colin_Marquardt/Hike_%26_Bike_Map">Description</a>)<br/>
-
-	  <img title="Legend" src="legend.png" id="legend" alt="The map's legend a.k.a. map key" border="">
-
-</div>
+	  Hosting courtesy <a href="http://toolserver.org">WikiMedia Toolserver</a>.<br/>
+	     <img title="Legend" src="legend.png" id="legend" alt="The map's legend a.k.a. map key" border="" />
+        </div>
         <!-- define a DIV into which the map will appear. -->
         <div style="position:absolute; top:0; left:0%; width:100%; height:100%" id="map"></div>
 
